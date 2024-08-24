@@ -20,7 +20,51 @@
 </head>
 
 <body>
-	<div id="container">
+	<script>
+		var blob = dataURLtoBlob('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==');
+		function dataURLtoBlob(dataurl) {
+			var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+				bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+			while(n--){
+				u8arr[n] = bstr.charCodeAt(n);
+			}
+			return new Blob([u8arr], {type:mime});
+		}
+
+		const blobWriter = new zip.BlobWriter("application/zip")
+		const zipWriter = new zip.ZipWriter(blobWriter, { bufferedWrite: true });
+		Promise.all(
+			[
+				{
+					fileName: "hello.txt",
+					contentFunc: () => new zip.TextReader("hello content")
+
+				},
+				{
+					fileName: "dot.png",
+					contentFunc: () => new zip.BlobReader(blob)
+				},
+				{
+					fileName: "data.json",
+					contentFunc: () => new zip.HttpReader('https://jsonplaceholder.typicode.com/todos/1')
+				}
+			]
+			.map(item => zipWriter.add(item.fileName, item.contentFunc(), {}))
+		).then(() => zipWriter.close())
+		.then((blob) => {
+			const a = document.createElement("a");
+			document.body.appendChild(Object.assign(a, {
+				download: "hello.zip",
+				href: URL.createObjectURL(blob),
+				textContent: "Download zip file",
+			}));
+			a.click();
+		})
+
+		
+		debugger;
+	</script>
+	<!-- <div id="container">
 		<h2>Read a zip file (demo)</h2>
 
 		<ol id="demo-container">
@@ -93,7 +137,8 @@
             <img id="img-viewer"/>
 		</ol>
 	</div>
-	<script type="text/javascript" src="./app.js"></script>
-</body>
+
+	<script type="text/javascript" src="./app.js"></script>-->
+</body> 
 
 </html>
